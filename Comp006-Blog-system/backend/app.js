@@ -9,6 +9,7 @@ const morgan = require('morgan');
 const csrf = require('csurf');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const methodOverride = require('method-override');
 
 const app = express();
 
@@ -32,7 +33,6 @@ app.use(morgan('dev'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-const methodOverride = require('method-override');
 app.use(methodOverride('_method'));
 app.use(cookieParser());
 app.use(session({
@@ -89,27 +89,22 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ====== Socket.io setup ======
-const http = require('http').createServer(app);
-const { Server } = require('socket.io');
-const io = new Server(http, {
-  cors: {
-    origin: "http://localhost:3000", // React frontend
-    credentials: true
-  }
-});
+// ====== Socket.io setup using socket.js ======
+const http = require('http');
+const server = http.createServer(app);
+const io = require('./socket').init(server);
 
 io.on('connection', (socket) => {
   console.log("Socket connected:", socket.id);
-  // Emit test notification for every new connection (for testing only)
-  socket.emit('notification', {
-    message: "🚀 This is a test notification from the backend!",
-    createdAt: new Date()
-  });
+  // Optional: test notification
+  // socket.emit('notification', {
+  //   message: "🚀 This is a test notification from the backend!",
+  //   createdAt: new Date()
+  // });
 });
 
 // ====== Start server ======
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

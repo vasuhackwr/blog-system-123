@@ -24,13 +24,23 @@ router.get('/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
+router.get('/user', (req, res) => {
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    res.json({ user: req.user });
+  } else {
+    res.json({ user: null });
+  }
+});
+
 // Google OAuth callback
 router.get('/google/callback',
   passport.authenticate('google', { failureRedirect: '/login', failureFlash: true }),
   (req, res) => {
     // On success, redirect to React frontend home page (adjust URL if needed)
-    res.redirect('http://localhost:3000/');
+    res.redirect('http://localhost:3000/posts');
   }
 );
+
+
 
 module.exports = router;

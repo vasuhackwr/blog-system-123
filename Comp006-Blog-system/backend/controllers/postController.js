@@ -6,6 +6,9 @@ const { postValidation } = require('../utils/validators');
 const Subscription = require('../models/Subscription');
 const Notification = require('../models/Notification');
 
+// Import Socket.IO instance getter
+const { getIO } = require('../socket');
+
 // Get all posts with optional search
 exports.getAllPosts = async (req, res) => {
   try {
@@ -58,7 +61,7 @@ exports.postCreatePost = async (req, res) => {
   // Validate the post input
   const { error } = postValidation(req.body);
   if (error) {
-    console.error("Validation error:", error); // <--- LOG validation error
+    console.error("Validation error:", error);
     return res.status(400).json({ success: false, message: error.details[0].message });
   }
 
@@ -77,13 +80,21 @@ exports.postCreatePost = async (req, res) => {
     });
 
     await newPost.save();
+
+    // Emit notification to all connected clients
+    try {
+      const io = getIO();
+      io.emit("notification", { message: `New post created: ${newPost.title}` });
+    } catch (e) {
+      console.warn("Socket.io not initialized, notification not sent.");
+    }
+
     res.json({ success: true, message: 'Post created successfully', post: newPost });
   } catch (err) {
-    console.error("POST /posts error:", err); // <--- LOG server error
+    console.error("POST /posts error:", err);
     res.status(500).json({ success: false, message: 'Server Error' });
   }
 };
-
 
 // Update post
 exports.putEditPost = async (req, res) => {

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Flash from "./components/Flash";
@@ -13,23 +13,32 @@ import PostCreate from "./pages/PostCreate";
 import PostEdit from "./pages/PostEdit";
 import AdminPosts from "./pages/AdminPosts";
 import AdminUsers from "./pages/AdminUsers";
-import NotificationTest from "./components/NotificationTest"; // <<-- NEW LINE
+import NotificationTest from "./components/NotificationTest";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./index.css";
-
-
 
 function App() {
   const messages = { success: [], error: [] };
   const [user, setUser] = useState(null);
 
+  // Fetch user info on mount (for Google OAuth and session persistence)
+  useEffect(() => {
+    fetch("/auth/user", { credentials: "include" })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data.user) setUser(data.user);
+        else setUser(null); // Ensure user is cleared if not logged in
+      });
+  }, []);
+
   return (
     <Router>
-      <Navbar user={user} />
-      <NotificationTest /> {/* <<-- Add here for notification alert */}
+      {/* Pass onLogout to Navbar so it can clear user on logout */}
+      <Navbar user={user} onLogout={() => setUser(null)} />
+      <NotificationTest />
       <div className="container mt-5 pt-4">
-        <Flash messages={messages} />
+        {/* <Flash messages={messages} /> */}
         <Routes>
           <Route path="/" element={<Login onLogin={setUser} />} />
           <Route path="/auth/login" element={<Login onLogin={setUser} />} />
